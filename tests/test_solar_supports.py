@@ -66,6 +66,51 @@ def test_edge_clearance_respected():
         assert m["x"] <= right - TEST_EDGE_CLEARANCE
 
 
+def test_cantilever_limit_per_row():
+    panels_data = [
+        {"x": 0, "y": 0},
+        {"x": 45.0, "y": 0},
+        {"x": 90.0, "y": 0},
+    ]
+
+    planner = SolarSupportPlanner(
+        panels=panels_data,
+        width=Decimal("44.7"),
+        height=Decimal("71.1"),
+        spacing=Decimal("16"),
+        first_rafter=Decimal("2"),
+        edge_clearance=Decimal("2"),
+        max_span=Decimal("48"),
+        cantilever_limit=Decimal("16")
+    )
+
+    result = planner.plan_supports()
+    mounts = result["mounts"]
+
+    # Row bounds
+    row_start_x = min(p["x"] for p in panels_data)
+    row_end_x = max(Decimal(p["x"]) + Decimal("44.7") for p in panels_data)
+
+    # First mount cantilever
+    first_mount_x = min(m["x"] for m in mounts)
+    assert first_mount_x - Decimal(row_start_x) <= planner.mount_calculator.cantilever_limit, \
+        f"First mount too far from row start: {first_mount_x}"
+
+    # Last mount cantilever
+    last_mount_x = max(m["x"] for m in mounts)
+    assert row_end_x - last_mount_x <= planner.mount_calculator.cantilever_limit, \
+        f"Last mount too far from row end: {row_end_x - last_mount_x}"
+
+    # Span between consecutive mounts
+    sorted_mounts = sorted(mounts, key=lambda m: m["x"])
+    for i in range(1, len(sorted_mounts)):
+        span = sorted_mounts[i]["x"] - sorted_mounts[i - 1]["x"]
+        assert span <= planner.mount_calculator.max_span, f"Span too large between mounts: {span}"
+
+    # Optional: print mounts
+    print("Mounts:", mounts)
+
+
 def test_cantilever_best_effort_rule():
     """If no rafter exists inside the cantilever limit, the closest rafter must be used."""
     panels = [{"x": 90.1, "y": 0}]
