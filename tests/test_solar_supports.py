@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from main import SolarSupportPlanner
+from services.solar_support import SolarSupportPlanner
 
 TEST_WIDTH = Decimal("44.7")
 TEST_HEIGHT = Decimal("71.1")

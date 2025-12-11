@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from main import SolarSupportPlanner
+from services.solar_support import SolarSupportPlanner
 
 panels = [
     {"x": 0, "y": 0},
